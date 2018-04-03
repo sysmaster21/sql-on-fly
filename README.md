@@ -4,6 +4,7 @@ SQL library for Java
 Usage:
 
 For generating implementations append into your pom.xml in plugins section:
+```xml
 <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-javadoc-plugin</artifactId>
@@ -28,9 +29,10 @@ For generating implementations append into your pom.xml in plugins section:
     </execution>
   </executions>
 </plugin>
-
+```
 
 For append generated sources to compiler:
+```xml
 <plugin>
   <groupId>org.codehaus.mojo</groupId>
   <artifactId>build-helper-maven-plugin</artifactId>
@@ -49,4 +51,5 @@ For append generated sources to compiler:
     </execution>
   </executions>
 </plugin>
+```
 
