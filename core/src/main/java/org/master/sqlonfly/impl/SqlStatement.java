@@ -72,6 +72,10 @@ public class SqlStatement {
     }
 
     public void compile(java.sql.Connection connection, boolean call) throws SQLException {
+        compile(connection, call, true);
+    }
+
+    public void compile(java.sql.Connection connection, boolean call, boolean identity) throws SQLException {
         if (!compiled) {
             Pattern patt = Pattern.compile(VAR_START + "([^" + VAR_END.substring(0, 1) + "]*)" + VAR_END);
 
@@ -112,7 +116,11 @@ public class SqlStatement {
             if (call) {
                 statement = connection.prepareCall("{call " + query + "}");
             } else {
-                statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                if (identity) {
+                    statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                } else {
+                    statement = connection.prepareStatement(query);
+                }
             }
             compiled = true;
         }

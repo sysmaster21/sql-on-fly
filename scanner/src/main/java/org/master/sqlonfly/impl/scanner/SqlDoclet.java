@@ -398,7 +398,10 @@ public class SqlDoclet {
                                     body.append(paramName);
                                     body.append("\", ");
                                     if (methodParam.mapName != null) {
-                                        body.append(mapParamName).append(".get(\"").append(paramName).append("\")");
+                                        //getMapper().convertTo(params.get("RequestTypeCode"), ISQLBatch.DataTypes.VARCHAR.getJavaClass())
+                                        body.append("getMapper().convertTo(")
+                                                .append(mapParamName).append(".get(\"").append(paramName).append("\")")
+                                                .append(", ISQLBatch.DataTypes.").append(methodParam.sqlType.name()).append(".getJavaClass())");
                                     } else if (methodParam.constValue == null) {
                                         if (InstanceOf(methodParam.clazz, "java.lang.Enum")) {
                                             body.append("getMapper().prepareValue(").append(paramName).append(")");
@@ -467,7 +470,12 @@ public class SqlDoclet {
 
                         body.append(shift.get()).append("try {\n");
                         shift.startBlock();
-                        body.append(shift.get()).append("statement.compile(connection, ").append("call".equals(execType) ? "true" : "false").append(");\n");
+                        body.append(shift.get())
+                                .append("statement.compile(connection, ")
+                                .append("call".equals(execType) ? "true" : "false")
+                                .append(", ")
+                                .append("@@identity".equals(returnType)).append(");\n\n");
+
                         body.append(shift.get()).append("getMapper().debug(\"<SQL.").append(method.name()).append("> statement compiled\");\n\n");
 
                         if (debugged) {
