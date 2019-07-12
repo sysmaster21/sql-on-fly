@@ -125,11 +125,11 @@ public class SQLEngine {
         if (getState() == SqlState.InTransaction) {
             statement = getStatementsCache().get(sql);
             if (statement == null) {
-                statement = new SqlStatement(name, sql);
+                statement = new SqlStatement(this, name, sql);
                 getStatementsCache().put(sql, statement);
             }
         } else {
-            statement = new SqlStatement(name, sql);
+            statement = new SqlStatement(this, name, sql);
         }
         return statement;
     }

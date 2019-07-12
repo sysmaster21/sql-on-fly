@@ -33,12 +33,14 @@ public class SqlStatement {
     private final HashMap<String, SqlParam> params = new HashMap<String, SqlParam>();
     private final String sql;
     private final String name;
+    private final SQLEngine engine;
     private PreparedStatement statement;
     private boolean compiled = false;
     private boolean hasResults = false;
     private SQLWarning warning;
 
-    public SqlStatement(String name, String sql) {
+    public SqlStatement(SQLEngine engine, String name, String sql) {
+        this.engine = engine;
         this.name = name;
         this.sql = sql;
     }
@@ -158,6 +160,8 @@ public class SqlStatement {
                         Blob blob = statement.getConnection().createBlob();
                         blob.setBytes(1, (byte[]) value);
                         value = blob;
+                    } else {
+                        value = engine.convertTo(value, engine.resolve(param.type));
                     }
                 }
 
