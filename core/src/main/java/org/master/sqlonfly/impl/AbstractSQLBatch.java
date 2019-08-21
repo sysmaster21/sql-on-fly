@@ -66,6 +66,14 @@ public abstract class AbstractSQLBatch<T extends ISQLBatch> implements ISQLBatch
         }
     }
 
+    public String any(String value) {
+        if (value == null || value.isEmpty()) {
+            return "%";
+        } else {
+            return "%" + value.replaceAll("\\*", "%").replaceAll("\\?", "_") + "%";
+        }
+    }
+
     public Date from(Date date) {
         date = date == null ? new Date() : date;
         Calendar cl = Calendar.getInstance();

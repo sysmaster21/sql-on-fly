@@ -163,6 +163,8 @@ public interface ISQLBatch<T extends ISQLBatch> {
 
     String like(String value);
 
+    String any(String value);
+
     Date from(Date date);
 
     Date to(Date date);
