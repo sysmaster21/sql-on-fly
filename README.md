@@ -1,10 +1,6 @@
 # sql-on-fly
 SQL library for Java
-<<<<<<< HEAD
-  last version 1.3
-=======
 last version 1.3
->>>>>>> github/master
 
 Usage:
 
