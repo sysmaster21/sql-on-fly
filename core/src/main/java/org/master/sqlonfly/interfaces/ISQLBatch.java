@@ -36,7 +36,8 @@ public interface ISQLBatch<T extends ISQLBatch> {
         BLOB,
         CLOB,
         TEXT,
-        DYNAMIC;
+        DYNAMIC,
+        MAP;
 
         public int getSqlType() {
             switch (this) {
@@ -161,6 +162,8 @@ public interface ISQLBatch<T extends ISQLBatch> {
     T rowcount(int rowcount);
 
     String like(String value);
+
+    String any(String value);
 
     Date from(Date date);
 

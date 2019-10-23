@@ -1,5 +1,6 @@
 # sql-on-fly
 SQL library for Java
+last version 1.3
 
 Usage:
 

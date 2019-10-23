@@ -30,7 +30,7 @@ public class SqlDoclet {
         return builder.toString();
     }
 
-    private static SqlMethodParam parseParam(String methodName, String text, ClassDoc clazz, String javaClass, boolean constAllowed) throws Exception {
+    private static SqlMethodParam parseParam(String methodName, String text, ClassDoc clazz, String javaClass, boolean constAllowed, String mapName) throws Exception {
         text = text.replaceAll("\\n", " ");
         StringTokenizer tokens = new StringTokenizer(text, " (),");
         String sqlConst = null;
@@ -100,7 +100,8 @@ public class SqlDoclet {
                 javaClass == null ? sqlType.getJavaClass().getName() : javaClass,
                 sqlLength,
                 sqlScale,
-                sqlConst
+                sqlConst,
+                mapName
         );
 
         return methodParam;
@@ -127,7 +128,7 @@ public class SqlDoclet {
 
                 ArrayList<SqlMethodParam> globalParams = new ArrayList<SqlMethodParam>();
                 for (Tag paramTag : clazz.tags("@const")) {
-                    globalParams.add(parseParam(clazz.name() + ".<global>", paramTag.text(), null, null, true));
+                    globalParams.add(parseParam(clazz.name() + ".<global>", paramTag.text(), null, null, true, null));
                 }
 
                 if (connection == null) {
@@ -207,15 +208,26 @@ public class SqlDoclet {
                         methodParams.addAll(globalParams);
 
                         for (Tag paramTag : method.tags("@const")) {
-                            methodParams.add(parseParam(clazz.name() + "." + method.name(), paramTag.text(), null, null, true));
+                            methodParams.add(parseParam(clazz.name() + "." + method.name(), paramTag.text(), null, null, true, null));
                         }
 
+                        String mapParamName = null;
                         Parameter[] params = method.parameters();
                         Tag[] paramTags = method.paramTags();
                         for (int i = 0; i < params.length; i++) {
                             imports.add(params[i].type().qualifiedTypeName());
+                            SqlMethodParam methodParam = parseParam(clazz.name() + "." + method.name(), paramTags[i].text(), params[i].type().asClassDoc(), params[i].typeName(), false, null);
+                            if (paramTags[i].text() != null && paramTags[i].text().contains(" MAP")) {
+                                mapParamName = methodParam.name;
+                            }
+                            methodParams.add(methodParam);
 
-                            methodParams.add(parseParam(clazz.name() + "." + method.name(), paramTags[i].text(), params[i].type().asClassDoc(), params[i].typeName(), false));
+                        }
+
+                        if (mapParamName != null) {
+                            for (Tag paramTag : method.tags("@map")) {
+                                methodParams.add(parseParam(clazz.name() + "." + method.name(), paramTag.text(), null, null, false, mapParamName));
+                            }
                         }
 
                         body
@@ -235,7 +247,7 @@ public class SqlDoclet {
 
                         boolean firstParam = true;
                         for (SqlMethodParam methodParam : methodParams) {
-                            if (methodParam.constValue == null) {
+                            if (methodParam.constValue == null && methodParam.mapName == null) {
                                 if (!firstParam) {
                                     body.append(", ");
                                 }
@@ -380,12 +392,17 @@ public class SqlDoclet {
                                     body.append("\", ");
                                     body.append(paramName);
                                     body.append(");\n");
-                                } else {
+                                } else if (methodParam.sqlType != ISQLBatch.DataTypes.MAP) {
                                     body.append(shift.get());
                                     body.append("statement.setParameter(\"");
                                     body.append(paramName);
                                     body.append("\", ");
-                                    if (methodParam.constValue == null) {
+                                    if (methodParam.mapName != null) {
+                                        //getMapper().convertTo(params.get("RequestTypeCode"), ISQLBatch.DataTypes.VARCHAR.getJavaClass())
+                                        body.append("getMapper().convertTo(")
+                                                .append(mapParamName).append(".get(\"").append(paramName).append("\")")
+                                                .append(", ISQLBatch.DataTypes.").append(methodParam.sqlType.name()).append(".getJavaClass())");
+                                    } else if (methodParam.constValue == null) {
                                         if (InstanceOf(methodParam.clazz, "java.lang.Enum")) {
                                             body.append("getMapper().prepareValue(").append(paramName).append(")");
                                         } else {
@@ -453,7 +470,12 @@ public class SqlDoclet {
 
                         body.append(shift.get()).append("try {\n");
                         shift.startBlock();
-                        body.append(shift.get()).append("statement.compile(connection, ").append("call".equals(execType) ? "true" : "false").append(");\n");
+                        body.append(shift.get())
+                                .append("statement.compile(connection, ")
+                                .append("call".equals(execType) ? "true" : "false")
+                                .append(", ")
+                                .append("@@identity".equals(returnType)).append(");\n\n");
+
                         body.append(shift.get()).append("getMapper().debug(\"<SQL.").append(method.name()).append("> statement compiled\");\n\n");
 
                         if (debugged) {
@@ -953,8 +975,9 @@ public class SqlDoclet {
         String length;
         String scale;
         String constValue;
+        String mapName;
 
-        public SqlMethodParam(String name, ISQLBatch.DataTypes sqlType, ClassDoc clazz, String javaType, String length, String scale, String constValue) {
+        public SqlMethodParam(String name, ISQLBatch.DataTypes sqlType, ClassDoc clazz, String javaType, String length, String scale, String constValue, String mapName) {
             this.name = name;
             this.sqlType = sqlType;
             this.javaType = javaType;
@@ -962,6 +985,7 @@ public class SqlDoclet {
             this.scale = scale;
             this.constValue = constValue;
             this.clazz = clazz;
+            this.mapName = mapName;
         }
 
     }

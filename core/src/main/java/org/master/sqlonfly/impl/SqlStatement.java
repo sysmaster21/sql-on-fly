@@ -33,12 +33,14 @@ public class SqlStatement {
     private final HashMap<String, SqlParam> params = new HashMap<String, SqlParam>();
     private final String sql;
     private final String name;
+    private final SQLEngine engine;
     private PreparedStatement statement;
     private boolean compiled = false;
     private boolean hasResults = false;
     private SQLWarning warning;
 
-    public SqlStatement(String name, String sql) {
+    public SqlStatement(SQLEngine engine, String name, String sql) {
+        this.engine = engine;
         this.name = name;
         this.sql = sql;
     }
@@ -72,6 +74,10 @@ public class SqlStatement {
     }
 
     public void compile(java.sql.Connection connection, boolean call) throws SQLException {
+        compile(connection, call, true);
+    }
+
+    public void compile(java.sql.Connection connection, boolean call, boolean identity) throws SQLException {
         if (!compiled) {
             Pattern patt = Pattern.compile(VAR_START + "([^" + VAR_END.substring(0, 1) + "]*)" + VAR_END);
 
@@ -112,7 +118,11 @@ public class SqlStatement {
             if (call) {
                 statement = connection.prepareCall("{call " + query + "}");
             } else {
-                statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                if (identity) {
+                    statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                } else {
+                    statement = connection.prepareStatement(query);
+                }
             }
             compiled = true;
         }
@@ -150,6 +160,8 @@ public class SqlStatement {
                         Blob blob = statement.getConnection().createBlob();
                         blob.setBytes(1, (byte[]) value);
                         value = blob;
+                    } else {
+                        value = engine.convertTo(value, engine.resolve(param.type));
                     }
                 }
 

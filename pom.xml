@@ -4,14 +4,14 @@
     
     <groupId>org.master.sqlonfly</groupId>
     <artifactId>project</artifactId>
-    <version>1.3</version>
+    <version>1.3-SNAPSHOT</version>
     
     <packaging>pom</packaging>
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
+    
     <modules>
         <module>core</module>
         <module>scanner</module>
